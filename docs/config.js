@@ -3,7 +3,7 @@ window.UNISONO_CONFIG = Object.freeze({
   whitelistFile: "WhiteList.lua",
   logsFile: "usage_logs.json",
   commandsFile: "client_commands.json",
-  recommendedClientVersion: "v1.6.0-client-control",
+  recommendedClientVersion: "v1.6.1-client-control",
   maxLogs: 500,
   maxCommands: 100,
   authorizedUsers: Object.freeze({
