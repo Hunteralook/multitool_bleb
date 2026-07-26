@@ -13,9 +13,49 @@
     <script src="config.js" defer></script>
     <script src="app.js" defer></script>
   </head>
-  <body>
+  <body class="is-locked">
     <div class="stars" aria-hidden="true"></div>
-    <main class="app-shell">
+
+    <section class="auth-gate" id="authGate" aria-labelledby="authTitle">
+      <div class="auth-card">
+        <div class="auth-mark" aria-hidden="true">U</div>
+        <p class="eyebrow">UNISONO CONTROL</p>
+        <h1 id="authTitle">Авторизация</h1>
+        <p class="auth-description">
+          Панель и её данные доступны только разрешённым администраторам.
+          Войдите с помощью токена своего GitHub-аккаунта.
+        </p>
+
+        <label class="field">
+          <span>GitHub token с правом <code>gist</code></span>
+          <input
+            id="tokenInput"
+            type="password"
+            placeholder="github_pat_... или ghp_..."
+            autocomplete="off"
+            spellcheck="false"
+          >
+        </label>
+
+        <button class="button primary auth-button" id="connectGitHub" type="button">
+          Войти через GitHub
+        </button>
+
+        <div class="security-note">
+          <strong>Токен не сохраняется.</strong>
+          <span>
+            Он находится только в памяти открытой вкладки и удаляется после
+            выхода или перезагрузки страницы.
+          </span>
+        </div>
+
+        <p class="auth-message" id="authMessage" role="status" aria-live="polite">
+          Ожидание авторизации
+        </p>
+      </div>
+    </section>
+
+    <main class="app-shell" id="appShell" hidden>
       <header class="titlebar">
         <div>
           <p class="eyebrow">UNISONO CONTROL</p>
@@ -216,31 +256,19 @@
                   type="text"
                   maxlength="64"
                   autocomplete="off"
-               >
-              </label>
-              <label class="field">
-                <span>GitHub token с правом <code>gist</code></span>
-                <input
-                  id="tokenInput"
-                  type="password"
-                  placeholder="github_pat_... или ghp_..."
-                  autocomplete="off"
-                  spellcheck="false"
+                  readonly
                >
               </label>
 
               <div class="security-note">
-                <strong>Токен не записывается в код или localStorage.</strong>
+                <strong>Сессия защищена проверкой GitHub-аккаунта.</strong>
                 <span
-                  >Он хранится только в памяти открытой вкладки и исчезает после
-                  перезагрузки страницы.</span
+                  >После выхода whitelist, логи и токен будут удалены из памяти
+                  этой вкладки.</span
                 >
               </div>
 
               <div class="editor-actions">
-                <button class="button primary" id="connectGitHub" type="button">
-                  Подключить GitHub
-                </button>
                 <button
                   class="button danger"
                   id="disconnectGitHub"
@@ -255,6 +283,10 @@
                 <div>
                   <dt>Аккаунт</dt>
                   <dd id="githubUser">не подключён</dd>
+                </div>
+                <div>
+                  <dt>Роль</dt>
+                  <dd id="githubRole">—</dd>
                 </div>
                 <div>
                   <dt>Whitelist-файл</dt>

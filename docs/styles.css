@@ -19,6 +19,10 @@
   box-sizing: border-box;
 }
 
+[hidden] {
+  display: none !important;
+}
+
 html {
   min-height: 100%;
   background: var(--bg);
@@ -52,6 +56,77 @@ input {
 
 button {
   color: inherit;
+}
+
+.auth-gate {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  min-height: calc(100vh - 64px);
+  place-items: center;
+}
+
+.auth-card {
+  width: min(430px, 100%);
+  padding: 28px;
+  border: 1px solid rgba(103, 128, 168, 0.48);
+  border-radius: 14px;
+  background: rgba(18, 24, 36, 0.96);
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(12px);
+}
+
+.auth-card h1 {
+  margin: 0;
+  font-size: 28px;
+  letter-spacing: 0.02em;
+}
+
+.auth-mark {
+  display: grid;
+  width: 46px;
+  height: 46px;
+  margin-bottom: 18px;
+  place-items: center;
+  border: 1px solid rgba(32, 214, 189, 0.58);
+  border-radius: 9px;
+  color: #031814;
+  background: var(--accent);
+  box-shadow: 0 0 30px rgba(32, 214, 189, 0.2);
+  font-size: 23px;
+  font-weight: 900;
+}
+
+.auth-description {
+  margin: 12px 0 22px;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.auth-button {
+  width: 100%;
+  margin-top: 14px;
+}
+
+.auth-card .security-note {
+  margin-top: 16px;
+}
+
+.auth-message {
+  min-height: 18px;
+  margin: 16px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+  text-align: center;
+}
+
+.auth-message.is-error {
+  color: var(--danger);
+}
+
+.auth-message.is-loading {
+  color: var(--cyan);
 }
 
 .stars,
@@ -531,7 +606,7 @@ tbody tr.is-selected {
 
 .connection-details {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(2, 1fr);
   gap: 10px;
   margin: 0;
 }

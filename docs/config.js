@@ -3,4 +3,11 @@ window.UNISONO_CONFIG = Object.freeze({
   whitelistFile: "WhiteList.lua",
   logsFile: "usage_logs.json",
   maxLogs: 500,
+  authorizedUsers: Object.freeze({
+    hunteralook: Object.freeze({
+      role: "Владелец",
+      canWrite: true,
+      views: Object.freeze(["whitelist", "logs", "connection"]),
+    }),
+  }),
 });
