@@ -5,10 +5,11 @@
   const FEATURES = ["ESP", "NOTES", "STATS", "NOT_WORKING"];
   const FEATURE_LABELS = {
     ESP: "ESP",
-    NOTES: "Ð—Ð°Ð¼ÐµÑ‚ÐºÐ¸",
-    STATS: "Ð¡Ñ‚Ð°Ñ‚Ð¸ÑÑ‚Ð¸ÐºÐ°",
-    NOT_WORKING: "!ÐÐµ Ñ€Ð°Ð±Ð¾Ñ‚Ð°ÐµÑ‚!",
+    NOTES: "Заметки",
+    STATS: "Статистика",
+    NOT_WORKING: "!Не работает!",
   };
+  const TOKEN_STORAGE_KEY = "unisono.github-token.v1";
 
   const state = {
     gistId: CONFIG.gistId,
@@ -87,6 +88,31 @@
     return CONFIG.authorizedUsers?.[String(login || "").toLowerCase()] || null;
   }
 
+  function readStoredToken() {
+    try {
+      return window.localStorage.getItem(TOKEN_STORAGE_KEY)?.trim() || "";
+    } catch {
+      return "";
+    }
+  }
+
+  function storeToken(token) {
+    try {
+      window.localStorage.setItem(TOKEN_STORAGE_KEY, token);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  function forgetStoredToken() {
+    try {
+      window.localStorage.removeItem(TOKEN_STORAGE_KEY);
+    } catch {
+      // The in-memory session is still cleared when browser storage is blocked.
+    }
+  }
+
   function canAccessView(viewName) {
     return (
       state.authorized &&
@@ -97,7 +123,7 @@
 
   function ensureAuthorized() {
     if (state.authorized && state.token && state.githubUser) return true;
-    lockApplication("Ð¡ÐµÑÑÐ¸Ñ Ð½Ðµ Ð°Ð²Ñ‚Ð¾Ñ€Ð¸Ð·Ð¾Ð²Ð°Ð½Ð°. Ð’Ð¾Ð¹Ð´Ð¸Ñ‚Ðµ Ñ‡ÐµÑ€ÐµÐ· GitHub.");
+    lockApplication("Сессия не авторизована. Войдите через GitHub.");
     return false;
   }
 
@@ -147,7 +173,7 @@
     });
     if (!response.ok)
       throw new Error(
-        `ÐÐµ ÑƒÐ´Ð°Ð»Ð¾ÑÑŒ Ð·Ð°Ð³Ñ€ÑƒÐ·Ð¸Ñ‚ÑŒ ${filename}: HTTP ${response.status}`,
+        `Не удалось загрузить ${filename}: HTTP ${response.status}`,
       );
     return response.text();
   }
@@ -184,7 +210,7 @@
     try {
       const parsed = JSON.parse(trimmed);
       if (!parsed || Array.isArray(parsed) || typeof parsed !== "object") {
-        throw new Error("Whitelist Ð´Ð¾Ð»Ð¶ÐµÐ½ Ð±Ñ‹Ñ‚ÑŒ JSON-Ð¾Ð±ÑŠÐµÐºÑ‚Ð¾Ð¼.");
+        throw new Error("Whitelist должен быть JSON-объектом.");
       }
       const normalized = {};
       for (const [steamId, permissions] of Object.entries(parsed)) {
@@ -195,7 +221,7 @@
     } catch (jsonError) {
       const parsedLua = parseLuaWhitelist(trimmed);
       if (Object.keys(parsedLua).length > 0) return parsedLua;
-      throw new Error(`Whitelist Ð½ÐµÐ»ÑŒÐ·Ñ Ñ€Ð°Ð·Ð¾Ð±Ñ€Ð°Ñ‚ÑŒ: ${jsonError.message}`);
+      throw new Error(`Whitelist нельзя разобрать: ${jsonError.message}`);
     }
   }
 
@@ -268,8 +294,8 @@
     const cell = document.createElement("td");
     const mark = document.createElement("span");
     mark.className = `permission-state${enabled ? " is-on" : ""}`;
-    mark.textContent = enabled ? "âœ“" : "â€”";
-    mark.title = `${label}: ${enabled ? "Ñ€Ð°Ð·Ñ€ÐµÑˆÐµÐ½Ð¾" : "Ð·Ð°Ð¿Ñ€ÐµÑ‰ÐµÐ½Ð¾"}`;
+    mark.textContent = enabled ? "✓" : "—";
+    mark.title = `${label}: ${enabled ? "разрешено" : "запрещено"}`;
     cell.append(mark);
     return cell;
   }
@@ -317,18 +343,18 @@
     elements.whitelistCount.textContent = String(steamIds.length);
     elements.saveWhitelist.disabled =
       !state.dirty || !state.authorized || !state.access?.canWrite;
-    const shortRevision = state.revision ? state.revision.slice(0, 9) : "â€”";
-    elements.revisionText.textContent = `Ð’ÐµÑ€ÑÐ¸Ñ: ${shortRevision}${state.dirty ? " â€¢ ÐµÑÑ‚ÑŒ Ð¸Ð·Ð¼ÐµÐ½ÐµÐ½Ð¸Ñ" : ""}`;
+    const shortRevision = state.revision ? state.revision.slice(0, 9) : "—";
+    elements.revisionText.textContent = `Версия: ${shortRevision}${state.dirty ? " • есть изменения" : ""}`;
   }
 
   function safeDate(value) {
     const date = new Date(value);
-    return Number.isNaN(date.getTime()) ? "â€”" : date.toLocaleString("ru-RU");
+    return Number.isNaN(date.getTime()) ? "—" : date.toLocaleString("ru-RU");
   }
 
   function appendTextCell(row, text) {
     const cell = document.createElement("td");
-    cell.textContent = String(text ?? "â€”");
+    cell.textContent = String(text ?? "—");
     row.append(cell);
   }
 
@@ -358,11 +384,11 @@
       appendTextCell(row, safeDate(entry.timestamp));
       appendTextCell(
         row,
-        `${entry.nick || "UNKNOWN"} Â· ${entry.steamid || "UNKNOWN"}`,
+        `${entry.nick || "UNKNOWN"} · ${entry.steamid || "UNKNOWN"}`,
       );
       appendTextCell(row, entry.action);
-      appendTextCell(row, entry.detail || "â€”");
-      appendTextCell(row, entry.source || "â€”");
+      appendTextCell(row, entry.detail || "—");
+      appendTextCell(row, entry.source || "—");
       fragment.append(row);
     }
 
@@ -373,10 +399,10 @@
 
   function renderConnection() {
     elements.gistShort.textContent = state.gistId
-      ? `${state.gistId.slice(0, 8)}â€¦`
-      : "â€”";
-    elements.githubUser.textContent = state.githubUser?.login || "Ð½Ðµ Ð¿Ð¾Ð´ÐºÐ»ÑŽÑ‡Ñ‘Ð½";
-    elements.githubRole.textContent = state.access?.role || "â€”";
+      ? `${state.gistId.slice(0, 8)}…`
+      : "—";
+    elements.githubUser.textContent = state.githubUser?.login || "не подключён";
+    elements.githubRole.textContent = state.access?.role || "—";
     elements.whitelistFilename.textContent = CONFIG.whitelistFile;
     elements.logsFilename.textContent = CONFIG.logsFile;
     elements.disconnectGitHub.disabled = !state.authorized;
@@ -386,7 +412,7 @@
     if (state.authorized && state.githubUser) {
       setConnectionState("online", `${state.access.role}: ${state.githubUser.login}`);
     } else {
-      setConnectionState("offline", "ÐÐµ Ð°Ð²Ñ‚Ð¾Ñ€Ð¸Ð·Ð¾Ð²Ð°Ð½");
+      setConnectionState("offline", "Не авторизован");
     }
 
     for (const button of document.querySelectorAll(".nav-button")) {
@@ -401,7 +427,7 @@
   }
 
   async function loadGistData(
-    message = "Ð—Ð°Ð³Ñ€ÑƒÐ·ÐºÐ° Ð´Ð°Ð½Ð½Ñ‹Ñ… Ð¸Ð· GitHub Gist...",
+    message = "Загрузка данных из GitHub Gist...",
     suppliedGist = null,
   ) {
     if (!ensureAuthorized()) return;
@@ -417,10 +443,10 @@
       state.selectedSteamId = null;
       renderAll();
       setFooter(
-        `Ð”Ð°Ð½Ð½Ñ‹Ðµ Ð·Ð°Ð³Ñ€ÑƒÐ¶ÐµÐ½Ñ‹ â€¢ ${Object.keys(state.whitelist).length} Ð¿Ð¾Ð»ÑŒÐ·Ð¾Ð²Ð°Ñ‚ÐµÐ»ÐµÐ¹ â€¢ ${state.logs.length} ÑÐ¾Ð±Ñ‹Ñ‚Ð¸Ð¹`,
+        `Данные загружены • ${Object.keys(state.whitelist).length} пользователей • ${state.logs.length} событий`,
       );
     } catch (error) {
-      setConnectionState("error", "ÐžÑˆÐ¸Ð±ÐºÐ° GitHub");
+      setConnectionState("error", "Ошибка GitHub");
       setFooter(error.message);
       showToast(error.message, true);
       throw error;
@@ -443,57 +469,57 @@
 
   function markDirty(message) {
     if (!ensureAuthorized() || !state.access?.canWrite) {
-      showToast("Ð£ ÑÑ‚Ð¾Ð³Ð¾ Ð°ÐºÐºÐ°ÑƒÐ½Ñ‚Ð° Ð½ÐµÑ‚ Ð¿Ñ€Ð°Ð²Ð° Ð¸Ð·Ð¼ÐµÐ½ÑÑ‚ÑŒ whitelist.", true);
+      showToast("У этого аккаунта нет права изменять whitelist.", true);
       return;
     }
     state.dirty = true;
     renderWhitelist();
-    setFooter(`${message} ÐÐ°Ð¶Ð¼Ð¸Ñ‚Ðµ Â«Ð¡Ð¾Ñ…Ñ€Ð°Ð½Ð¸Ñ‚ÑŒ Ð² GitHubÂ».`);
+    setFooter(`${message} Нажмите «Сохранить в GitHub».`);
   }
 
   function upsertUser() {
     if (!ensureAuthorized() || !state.access?.canWrite) {
-      showToast("Ð£ ÑÑ‚Ð¾Ð³Ð¾ Ð°ÐºÐºÐ°ÑƒÐ½Ñ‚Ð° Ð½ÐµÑ‚ Ð¿Ñ€Ð°Ð²Ð° Ð¸Ð·Ð¼ÐµÐ½ÑÑ‚ÑŒ whitelist.", true);
+      showToast("У этого аккаунта нет права изменять whitelist.", true);
       return;
     }
     const steamId = elements.steamIdInput.value.trim();
     if (!isValidSteamId(steamId)) {
-      showToast("SteamID Ð´Ð¾Ð»Ð¶ÐµÐ½ Ð²Ñ‹Ð³Ð»ÑÐ´ÐµÑ‚ÑŒ ÐºÐ°Ðº STEAM_0:0:123456789.", true);
+      showToast("SteamID должен выглядеть как STEAM_0:0:123456789.", true);
       return;
     }
     state.whitelist[steamId] = normalizePermissions(getEditorPermissions());
     state.selectedSteamId = steamId;
     queueAudit("whitelist.upsert", steamId);
-    markDirty(`${steamId} Ð´Ð¾Ð±Ð°Ð²Ð»ÐµÐ½ Ð² Ñ‡ÐµÑ€Ð½Ð¾Ð²Ð¸Ðº.`);
+    markDirty(`${steamId} добавлен в черновик.`);
   }
 
   function removeUser() {
     if (!ensureAuthorized() || !state.access?.canWrite) {
-      showToast("Ð£ ÑÑ‚Ð¾Ð³Ð¾ Ð°ÐºÐºÐ°ÑƒÐ½Ñ‚Ð° Ð½ÐµÑ‚ Ð¿Ñ€Ð°Ð²Ð° Ð¸Ð·Ð¼ÐµÐ½ÑÑ‚ÑŒ whitelist.", true);
+      showToast("У этого аккаунта нет права изменять whitelist.", true);
       return;
     }
     const steamId = state.selectedSteamId || elements.steamIdInput.value.trim();
     if (!state.whitelist[steamId]) {
-      showToast("Ð¡Ð½Ð°Ñ‡Ð°Ð»Ð° Ð²Ñ‹Ð±ÐµÑ€Ð¸Ñ‚Ðµ Ð¿Ð¾Ð»ÑŒÐ·Ð¾Ð²Ð°Ñ‚ÐµÐ»Ñ.", true);
+      showToast("Сначала выберите пользователя.", true);
       return;
     }
-    if (!window.confirm(`Ð£Ð´Ð°Ð»Ð¸Ñ‚ÑŒ ${steamId} Ð¸Ð· whitelist?`)) return;
+    if (!window.confirm(`Удалить ${steamId} из whitelist?`)) return;
     delete state.whitelist[steamId];
     queueAudit("whitelist.remove", steamId);
     clearEditor();
-    markDirty(`${steamId} ÑƒÐ´Ð°Ð»Ñ‘Ð½ Ð¸Ð· Ñ‡ÐµÑ€Ð½Ð¾Ð²Ð¸ÐºÐ°.`);
+    markDirty(`${steamId} удалён из черновика.`);
   }
 
   async function saveChanges() {
     if (!ensureAuthorized()) return;
     if (!state.access?.canWrite) {
-      showToast("Ð£ ÑÑ‚Ð¾Ð³Ð¾ Ð°ÐºÐºÐ°ÑƒÐ½Ñ‚Ð° Ð½ÐµÑ‚ Ð¿Ñ€Ð°Ð²Ð° ÑÐ¾Ñ…Ñ€Ð°Ð½ÑÑ‚ÑŒ whitelist.", true);
+      showToast("У этого аккаунта нет права сохранять whitelist.", true);
       return;
     }
     if (!state.dirty) return;
 
     elements.saveWhitelist.disabled = true;
-    setFooter("ÐŸÑ€Ð¾Ð²ÐµÑ€ÐºÐ° Ð°ÐºÑ‚ÑƒÐ°Ð»ÑŒÐ½Ð¾Ð¹ Ð²ÐµÑ€ÑÐ¸Ð¸ Gist...");
+    setFooter("Проверка актуальной версии Gist...");
     try {
       const latestGist = await getGist();
       const latestRevision = revisionOf(latestGist);
@@ -503,7 +529,7 @@
         latestRevision !== state.revision
       ) {
         throw new Error(
-          "Gist Ð¸Ð·Ð¼ÐµÐ½Ð¸Ð»ÑÑ Ð¿Ð¾ÑÐ»Ðµ Ð·Ð°Ð³Ñ€ÑƒÐ·ÐºÐ¸. ÐÐ°Ð¶Ð¼Ð¸Ñ‚Ðµ Â«ÐžÐ±Ð½Ð¾Ð²Ð¸Ñ‚ÑŒÂ» Ð¸ Ð¿Ð¾Ð²Ñ‚Ð¾Ñ€Ð¸Ñ‚Ðµ Ð¸Ð·Ð¼ÐµÐ½ÐµÐ½Ð¸Ñ.",
+          "Gist изменился после загрузки. Нажмите «Обновить» и повторите изменения.",
         );
       }
 
@@ -541,8 +567,8 @@
       state.dirty = false;
       state.pendingAudit = [];
       renderAll();
-      setFooter("Whitelist ÑÐ¾Ñ…Ñ€Ð°Ð½Ñ‘Ð½ Ð² GitHub Gist.");
-      showToast("Ð˜Ð·Ð¼ÐµÐ½ÐµÐ½Ð¸Ñ ÑƒÑÐ¿ÐµÑˆÐ½Ð¾ ÑÐ¾Ñ…Ñ€Ð°Ð½ÐµÐ½Ñ‹.");
+      setFooter("Whitelist сохранён в GitHub Gist.");
+      showToast("Изменения успешно сохранены.");
     } catch (error) {
       setFooter(error.message);
       showToast(error.message, true);
@@ -550,10 +576,10 @@
     }
   }
 
-  async function connectGitHub() {
-    const token = elements.tokenInput.value.trim();
+  async function connectGitHub(tokenOverride = "", restoring = false) {
+    const token = String(tokenOverride || elements.tokenInput.value).trim();
     if (!token) {
-      setAuthMessage("Ð’Ð²ÐµÐ´Ð¸Ñ‚Ðµ GitHub token.", "error");
+      setAuthMessage("Введите GitHub token.", "error");
       elements.tokenInput.focus();
       return;
     }
@@ -561,13 +587,18 @@
     state.gistId = CONFIG.gistId;
     state.token = token;
     elements.connectGitHub.disabled = true;
-    setAuthMessage("ÐŸÑ€Ð¾Ð²ÐµÑ€ÑÑŽ GitHub-Ð°ÐºÐºÐ°ÑƒÐ½Ñ‚...", "loading");
+    setAuthMessage(
+      restoring
+        ? "Проверяю сохранённую сессию..."
+        : "Проверяю GitHub-аккаунт...",
+      "loading",
+    );
     try {
       const githubUser = await apiRequest("/user");
       const access = accessForLogin(githubUser.login);
       if (!access) {
         throw new Error(
-          `ÐÐºÐºÐ°ÑƒÐ½Ñ‚Ñƒ ${githubUser.login} Ð´Ð¾ÑÑ‚ÑƒÐ¿ Ðº ÑÑ‚Ð¾Ð¹ Ð¿Ð°Ð½ÐµÐ»Ð¸ Ð½Ðµ Ñ€Ð°Ð·Ñ€ÐµÑˆÑ‘Ð½.`,
+          `Аккаунту ${githubUser.login} доступ к этой панели не разрешён.`,
         );
       }
 
@@ -575,31 +606,44 @@
       state.access = access;
       state.authorized = true;
 
-      setAuthMessage("ÐÐºÐºÐ°ÑƒÐ½Ñ‚ Ñ€Ð°Ð·Ñ€ÐµÑˆÑ‘Ð½. Ð—Ð°Ð³Ñ€ÑƒÐ¶Ð°ÑŽ Ð·Ð°Ñ‰Ð¸Ñ‰Ñ‘Ð½Ð½Ñ‹Ðµ Ð´Ð°Ð½Ð½Ñ‹Ðµ...", "loading");
+      setAuthMessage("Аккаунт разрешён. Загружаю защищённые данные...", "loading");
       const gist = await getGist();
       const gistOwner = gist.owner?.login;
       if (!gistOwner || !accessForLogin(gistOwner)) {
-        throw new Error("Ð’Ð»Ð°Ð´ÐµÐ»ÐµÑ† Ñ…Ñ€Ð°Ð½Ð¸Ð»Ð¸Ñ‰Ð° Ð½Ðµ Ð²Ñ…Ð¾Ð´Ð¸Ñ‚ Ð² ÑÐ¿Ð¸ÑÐ¾Ðº Ð°Ð´Ð¼Ð¸Ð½Ð¸ÑÑ‚Ñ€Ð°Ñ‚Ð¾Ñ€Ð¾Ð².");
+        throw new Error("Владелец хранилища не входит в список администраторов.");
       }
 
       await loadGistData(
-        `GitHub Ð¿Ð¾Ð´ÐºÐ»ÑŽÑ‡Ñ‘Ð½: ${state.githubUser.login}. Ð—Ð°Ð³Ñ€ÑƒÐ·ÐºÐ° Gist...`,
+        `GitHub подключён: ${state.githubUser.login}. Загрузка Gist...`,
         gist,
       );
       unlockApplication();
       elements.tokenInput.value = "";
+      const tokenStored = storeToken(token);
       renderAll();
-      showToast(`Ð’Ñ…Ð¾Ð´ Ð²Ñ‹Ð¿Ð¾Ð»Ð½ÐµÐ½: ${state.githubUser.login}.`);
+      showToast(
+        tokenStored
+          ? `Вход выполнен: ${state.githubUser.login}. Токен сохранён.`
+          : `Вход выполнен: ${state.githubUser.login}, но браузер запретил сохранить токен.`,
+        !tokenStored,
+      );
     } catch (error) {
-      clearSession();
-      setAuthMessage(`Ð’Ñ…Ð¾Ð´ Ð½Ðµ Ð²Ñ‹Ð¿Ð¾Ð»Ð½ÐµÐ½: ${error.message}`, "error");
-      elements.tokenInput.select();
+      clearSession(true);
+      setAuthMessage(
+        restoring
+          ? `Сохранённая сессия недействительна: ${error.message}. Введите новый токен.`
+          : `Вход не выполнен: ${error.message}`,
+        "error",
+      );
+      elements.tokenInput.focus();
+      if (!restoring) elements.tokenInput.select();
     } finally {
       elements.connectGitHub.disabled = false;
     }
   }
 
-  function clearSession() {
+  function clearSession(forgetToken = false) {
+    if (forgetToken) forgetStoredToken();
     state.token = "";
     state.githubUser = null;
     state.authorized = false;
@@ -616,7 +660,7 @@
     renderAll();
   }
 
-  function lockApplication(message = "ÐžÐ¶Ð¸Ð´Ð°Ð½Ð¸Ðµ Ð°Ð²Ñ‚Ð¾Ñ€Ð¸Ð·Ð°Ñ†Ð¸Ð¸") {
+  function lockApplication(message = "Ожидание авторизации") {
     document.body.classList.add("is-locked");
     elements.appShell.hidden = true;
     elements.authGate.hidden = false;
@@ -633,19 +677,21 @@
   async function disconnectGitHub() {
     if (
       state.dirty &&
-      !window.confirm("Ð’Ñ‹Ð¹Ñ‚Ð¸ Ð¸ Ð¾Ñ‚Ð¼ÐµÐ½Ð¸Ñ‚ÑŒ Ð½ÐµÑÐ¾Ñ…Ñ€Ð°Ð½Ñ‘Ð½Ð½Ñ‹Ðµ Ð¸Ð·Ð¼ÐµÐ½ÐµÐ½Ð¸Ñ?")
+      !window.confirm("Выйти и отменить несохранённые изменения?")
     ) {
       return;
     }
-    clearSession();
-    lockApplication("Ð¡ÐµÑÑÐ¸Ñ Ð·Ð°Ð²ÐµÑ€ÑˆÐµÐ½Ð°. Ð¢Ð¾ÐºÐµÐ½ Ð¸ Ð´Ð°Ð½Ð½Ñ‹Ðµ ÑƒÐ´Ð°Ð»ÐµÐ½Ñ‹ Ð¸Ð· Ð¿Ð°Ð¼ÑÑ‚Ð¸.");
+    clearSession(true);
+    lockApplication(
+      "Сессия завершена. Сохранённый токен и данные удалены с устройства.",
+    );
     elements.tokenInput.focus();
   }
 
   function reloadWithConfirmation() {
     if (
       state.dirty &&
-      !window.confirm("ÐžÑ‚Ð¼ÐµÐ½Ð¸Ñ‚ÑŒ Ð½ÐµÑÐ¾Ñ…Ñ€Ð°Ð½Ñ‘Ð½Ð½Ñ‹Ðµ Ð¸Ð·Ð¼ÐµÐ½ÐµÐ½Ð¸Ñ Ð¸ Ð·Ð°Ð³Ñ€ÑƒÐ·Ð¸Ñ‚ÑŒ Ð´Ð°Ð½Ð½Ñ‹Ðµ Ð·Ð°Ð½Ð¾Ð²Ð¾?")
+      !window.confirm("Отменить несохранённые изменения и загрузить данные заново?")
     ) {
       return;
     }
@@ -672,7 +718,7 @@
     elements.saveWhitelist.addEventListener("click", saveChanges);
     byId("reloadWhitelist").addEventListener("click", reloadWithConfirmation);
     byId("reloadLogs").addEventListener("click", reloadWithConfirmation);
-    elements.connectGitHub.addEventListener("click", connectGitHub);
+    elements.connectGitHub.addEventListener("click", () => connectGitHub());
     elements.disconnectGitHub.addEventListener("click", disconnectGitHub);
     elements.whitelistSearch.addEventListener("input", renderWhitelist);
     elements.logsSearch.addEventListener("input", renderLogs);
@@ -703,7 +749,12 @@
     startClock();
     clearSession();
     lockApplication();
-    elements.tokenInput.focus();
+    const storedToken = readStoredToken();
+    if (storedToken) {
+      await connectGitHub(storedToken, true);
+    } else {
+      elements.tokenInput.focus();
+    }
   }
 
   initialize();
