@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="referrer" content="no-referrer">
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; connect-src https://api.github.com https://gist.githubusercontent.com; img-src 'self' data:; style-src 'self'; script-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'"
+   >
+    <title>Unisono Multi-Tool — Whitelist</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="config.js" defer></script>
+    <script src="app.js" defer></script>
+  </head>
+  <body>
+    <div class="stars" aria-hidden="true"></div>
+    <main class="app-shell">
+      <header class="titlebar">
+        <div>
+          <p class="eyebrow">UNISONO CONTROL</p>
+          <h1>Unisono Multi-Tool</h1>
+        </div>
+        <div class="connection-pill" id="connectionPill" data-state="offline">
+          <span class="status-dot" aria-hidden="true"></span>
+          <span id="connectionText">Только чтение</span>
+        </div>
+      </header>
+
+      <div class="workspace">
+        <aside class="sidebar" aria-label="Разделы">
+          <button
+            class="nav-button is-active"
+            type="button"
+            data-view="whitelist"
+          >
+            <span>Whitelist</span>
+            <strong id="whitelistCount">0</strong>
+          </button>
+          <button class="nav-button" type="button" data-view="logs">
+            <span>Логи функций</span>
+            <strong id="logsCount">0</strong>
+          </button>
+          <button class="nav-button" type="button" data-view="connection">
+            <span>Подключение</span>
+            <strong>GitHub</strong>
+          </button>
+
+          <div class="sidebar-note">
+            <span>Gist</span>
+            <code id="gistShort">—</code>
+          </div>
+        </aside>
+
+        <section class="content">
+          <div class="view is-active" id="view-whitelist">
+            <div class="view-heading">
+              <div>
+                <p class="section-kicker">ДОСТУП К ФУНКЦИЯМ</p>
+                <h2>Управление whitelist</h2>
+              </div>
+              <div class="heading-actions">
+                <button
+                  class="button secondary"
+                  id="reloadWhitelist"
+                  type="button"
+                >
+                  Обновить
+                </button>
+                <button
+                  class="button primary"
+                  id="saveWhitelist"
+                  type="button"
+                  disabled
+                >
+                  Сохранить в GitHub
+                </button>
+              </div>
+            </div>
+
+            <div class="editor-card">
+              <label class="field steam-field">
+                <span>SteamID пользователя</span>
+                <input
+                  id="steamIdInput"
+                  type="text"
+                  maxlength="32"
+                  placeholder="STEAM_0:0:123456789"
+                  autocomplete="off"
+               >
+              </label>
+
+              <fieldset class="permissions">
+                <legend>Доступные функции</legend>
+                <label><input type="checkbox" value="ESP" checked> ESP</label>
+                <label
+                  ><input type="checkbox" value="NOTES" checked> 3D
+                  Заметки</label
+                >
+                <label
+                  ><input type="checkbox" value="STATS" checked>
+                  Статистика</label
+                >
+                <label
+                  ><input type="checkbox" value="NOT_WORKING" checked> !Не
+                  работает!</label
+                >
+              </fieldset>
+
+              <div class="editor-actions">
+                <button class="button primary" id="upsertUser" type="button">
+                  Добавить / обновить
+                </button>
+                <button
+                  class="button danger"
+                  id="removeUser"
+                  type="button"
+                  disabled
+                >
+                  Удалить выбранного
+                </button>
+                <button class="button ghost" id="clearEditor" type="button">
+                  Очистить поля
+                </button>
+              </div>
+            </div>
+
+            <div class="table-card">
+              <div class="table-toolbar">
+                <label class="search-field">
+                  <span class="sr-only">Поиск по whitelist</span>
+                  <input
+                    id="whitelistSearch"
+                    type="search"
+                    placeholder="Поиск по SteamID..."
+                    autocomplete="off"
+                 >
+                </label>
+                <span class="revision" id="revisionText">Версия: —</span>
+              </div>
+              <div class="table-scroll">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>SteamID</th>
+                      <th>ESP</th>
+                      <th>Заметки</th>
+                      <th>Статистика</th>
+                      <th>!Не работает!</th>
+                    </tr>
+                  </thead>
+                  <tbody id="whitelistRows"></tbody>
+                </table>
+              </div>
+              <p class="empty-state" id="whitelistEmpty" hidden>
+                В whitelist пока никого нет.
+              </p>
+            </div>
+          </div>
+
+          <div class="view" id="view-logs">
+            <div class="view-heading">
+              <div>
+                <p class="section-kicker">ЖУРНАЛ ДЕЙСТВИЙ</p>
+                <h2>Использованные функции</h2>
+              </div>
+              <button class="button secondary" id="reloadLogs" type="button">
+                Обновить
+              </button>
+            </div>
+
+            <div class="table-card">
+              <div class="table-toolbar">
+                <label class="search-field">
+                  <span class="sr-only">Фильтр логов</span>
+                  <input
+                    id="logsSearch"
+                    type="search"
+                    placeholder="SteamID, ник или функция..."
+                    autocomplete="off"
+                 >
+                </label>
+                <span class="revision">Хранятся последние 500 событий</span>
+              </div>
+              <div class="table-scroll logs-scroll">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Время</th>
+                      <th>Пользователь</th>
+                      <th>Функция</th>
+                      <th>Детали</th>
+                      <th>Источник</th>
+                    </tr>
+                  </thead>
+                  <tbody id="logsRows"></tbody>
+                </table>
+              </div>
+              <p class="empty-state" id="logsEmpty" hidden>Логи пока пусты.</p>
+            </div>
+          </div>
+
+          <div class="view" id="view-connection">
+            <div class="view-heading">
+              <div>
+                <p class="section-kicker">БЕЗОПАСНОЕ ПОДКЛЮЧЕНИЕ</p>
+                <h2>GitHub Gist</h2>
+              </div>
+            </div>
+
+            <div class="connection-card">
+              <label class="field">
+                <span>Gist ID</span>
+                <input
+                  id="gistIdInput"
+                  type="text"
+                  maxlength="64"
+                  autocomplete="off"
+               >
+              </label>
+              <label class="field">
+                <span>GitHub token с правом <code>gist</code></span>
+                <input
+                  id="tokenInput"
+                  type="password"
+                  placeholder="github_pat_... или ghp_..."
+                  autocomplete="off"
+                  spellcheck="false"
+               >
+              </label>
+
+              <div class="security-note">
+                <strong>Токен не записывается в код или localStorage.</strong>
+                <span
+                  >Он хранится только в памяти открытой вкладки и исчезает после
+                  перезагрузки страницы.</span
+                >
+              </div>
+
+              <div class="editor-actions">
+                <button class="button primary" id="connectGitHub" type="button">
+                  Подключить GitHub
+                </button>
+                <button
+                  class="button danger"
+                  id="disconnectGitHub"
+                  type="button"
+                  disabled
+                >
+                  Отключить
+                </button>
+              </div>
+
+              <dl class="connection-details">
+                <div>
+                  <dt>Аккаунт</dt>
+                  <dd id="githubUser">не подключён</dd>
+                </div>
+                <div>
+                  <dt>Whitelist-файл</dt>
+                  <dd id="whitelistFilename">—</dd>
+                </div>
+                <div>
+                  <dt>Файл логов</dt>
+                  <dd id="logsFilename">—</dd>
+                </div>
+              </dl>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <footer class="statusbar">
+        <span id="footerStatus">Загрузка данных...</span>
+        <time id="clock"></time>
+      </footer>
+    </main>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  </body>
+</html>
