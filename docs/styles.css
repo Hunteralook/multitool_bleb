@@ -521,6 +521,10 @@ button {
   max-height: 472px;
 }
 
+#view-logs table {
+  min-width: 1080px;
+}
+
 table {
   width: 100%;
   border-collapse: collapse;
@@ -558,6 +562,64 @@ tbody tr:hover {
 tbody tr.is-selected {
   background: rgba(32, 214, 189, 0.12);
   box-shadow: inset 3px 0 var(--accent);
+}
+
+.log-primary,
+.log-meta {
+  display: block;
+}
+
+.log-primary {
+  color: var(--text);
+}
+
+.log-meta {
+  max-width: 360px;
+  margin-top: 4px;
+  overflow: hidden;
+  color: var(--muted);
+  font-family: "Cascadia Mono", "Consolas", monospace;
+  font-size: 10px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.log-function .log-primary {
+  color: #d9fffa;
+  font-weight: 700;
+}
+
+.log-result {
+  display: inline-flex;
+  min-width: 74px;
+  justify-content: center;
+  padding: 4px 8px;
+  border: 1px solid rgba(143, 158, 180, 0.38);
+  border-radius: 999px;
+  color: #c5cfdd;
+  background: rgba(143, 158, 180, 0.1);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.log-result.is-success {
+  border-color: rgba(32, 214, 189, 0.45);
+  color: #8cf1df;
+  background: rgba(32, 214, 189, 0.11);
+}
+
+.log-result.is-error {
+  border-color: rgba(255, 101, 122, 0.5);
+  color: #ff9aaa;
+  background: rgba(255, 101, 122, 0.11);
+}
+
+.log-result.is-cancelled {
+  border-color: rgba(255, 200, 87, 0.48);
+  color: #ffdc87;
+  background: rgba(255, 200, 87, 0.1);
 }
 
 .permission-state {

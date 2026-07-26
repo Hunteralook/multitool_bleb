@@ -9,6 +9,65 @@
     STATS: "Статистика",
     NOT_WORKING: "!Не работает!",
   };
+  const ACTION_LABELS = Object.freeze({
+    "menu.open": "Открытие Multi‑Tool",
+    "shader.select": "Выбор шейдера",
+    "shader.reset": "Сброс шейдеров",
+    "font.esp.apply": "Шрифт ESP",
+    "font.menu.apply": "Шрифт меню",
+    "physgun.give": "Выдача физгана",
+    "physgun.rainbow": "Радужный физган",
+    "cvar.change": "Изменение CVar",
+    "console.help": "Справка консоли",
+    "console.lua": "Lua‑консоль",
+    "console.command": "Клиентская команда",
+    "update.check": "Проверка обновления",
+    "update.install": "Установка обновления",
+    "script.disable": "Отключение скрипта",
+    "sound.stop": "Остановка звуков",
+    "whitelist.open": "Открытие whitelist",
+    "whitelist.reload": "Обновление whitelist",
+    "whitelist.upsert": "Добавление в whitelist",
+    "whitelist.remove": "Удаление из whitelist",
+    "whitelist.broadcast": "Синхронизация whitelist",
+    "github_token.save": "Сохранение GitHub‑токена",
+    "github_token.remove": "Удаление GitHub‑токена",
+    "logs.sync": "Выгрузка логов",
+    "qmenu.color": "Цвет Q‑меню",
+    "qmenu.rainbow": "Радужное Q‑меню",
+    "qmenu.reset": "Сброс Q‑меню",
+    "chat.command": "Команда в чат",
+    "notes.copy_position": "Копирование координат",
+    "notes.create_here": "3D‑заметка рядом",
+    "notes.create_aim": "3D‑заметка по прицелу",
+    "notes.remove": "Удаление 3D‑заметки",
+    "notes.rename": "Переименование 3D‑заметки",
+    "notes.clear": "Очистка 3D‑заметок",
+    "stats.reset": "Сброс статистики",
+    "settings.reset_all": "Сброс всех настроек",
+    "theme.apply": "Смена темы",
+    "esp.toggle": "Переключение ESP",
+    "esp.distance": "Дальность ESP",
+    "esp.role_color": "Цвет роли ESP",
+    "esp.layout": "Разметка ESP",
+    "esp.reset": "Сброс ESP",
+    "explorer.search": "Поиск в исследователе",
+    "explorer.physgun_scan": "Сканирование физгана",
+    "explorer.hooks": "Просмотр хуков",
+    "admin.command": "Админская команда",
+  });
+  const RESULT_LABELS = Object.freeze({
+    success: "Успешно",
+    error: "Ошибка",
+    cancelled: "Отменено",
+    info: "Событие",
+  });
+  const SOURCE_LABELS = Object.freeze({
+    "game-client": "GMod-клиент",
+    "admin-client": "GMod-админ",
+    "client-peer": "GMod peer",
+    "github-pages": "Веб-панель",
+  });
   const TOKEN_STORAGE_KEY = "unisono.github-token.v1";
 
   const state = {
@@ -229,7 +288,11 @@
     if (!String(source || "").trim()) return [];
     try {
       const parsed = JSON.parse(source);
-      return Array.isArray(parsed) ? parsed.slice(-CONFIG.maxLogs) : [];
+      return Array.isArray(parsed)
+        ? parsed
+            .filter((entry) => entry && typeof entry === "object")
+            .slice(-CONFIG.maxLogs)
+        : [];
     } catch {
       return [];
     }
@@ -358,6 +421,41 @@
     row.append(cell);
   }
 
+  function appendLogCell(row, primary, secondary = "", className = "") {
+    const cell = document.createElement("td");
+    if (className) cell.className = className;
+    const main = document.createElement("span");
+    main.className = "log-primary";
+    main.textContent = String(primary || "—");
+    cell.append(main);
+    if (secondary) {
+      const meta = document.createElement("span");
+      meta.className = "log-meta";
+      meta.textContent = String(secondary);
+      cell.append(meta);
+    }
+    row.append(cell);
+  }
+
+  function normalizedResult(entry) {
+    const result = String(entry?.result || "info").toLowerCase();
+    return RESULT_LABELS[result] ? result : "info";
+  }
+
+  function actionLabel(action) {
+    return ACTION_LABELS[String(action || "")] || String(action || "Неизвестная функция");
+  }
+
+  function appendResultCell(row, entry) {
+    const result = normalizedResult(entry);
+    const cell = document.createElement("td");
+    const badge = document.createElement("span");
+    badge.className = `log-result is-${result}`;
+    badge.textContent = RESULT_LABELS[result];
+    cell.append(badge);
+    row.append(cell);
+  }
+
   function renderLogs() {
     const query = elements.logsSearch.value.trim().toLowerCase();
     const logs = [...state.logs]
@@ -370,8 +468,16 @@
           entry.steamid,
           entry.nick,
           entry.action,
+          actionLabel(entry.action),
+          entry.category,
           entry.detail,
+          entry.result,
+          RESULT_LABELS[normalizedResult(entry)],
+          entry.map,
+          entry.server,
+          entry.version,
           entry.source,
+          SOURCE_LABELS[entry.source],
         ]
           .join(" ")
           .toLowerCase();
@@ -382,13 +488,25 @@
     for (const entry of logs) {
       const row = document.createElement("tr");
       appendTextCell(row, safeDate(entry.timestamp));
-      appendTextCell(
+      appendLogCell(
         row,
         `${entry.nick || "UNKNOWN"} · ${entry.steamid || "UNKNOWN"}`,
+        entry.steamid64 && entry.steamid64 !== "0" ? entry.steamid64 : "",
       );
-      appendTextCell(row, entry.action);
-      appendTextCell(row, entry.detail || "—");
-      appendTextCell(row, entry.source || "—");
+      appendLogCell(row, actionLabel(entry.action), entry.action || "unknown", "log-function");
+      appendLogCell(
+        row,
+        entry.detail || "—",
+        [entry.server, entry.map && `Карта: ${entry.map}`, entry.version]
+          .filter(Boolean)
+          .join(" • "),
+      );
+      appendResultCell(row, entry);
+      appendLogCell(
+        row,
+        SOURCE_LABELS[entry.source] || entry.source || "—",
+        entry.source && SOURCE_LABELS[entry.source] ? entry.source : "",
+      );
       fragment.append(row);
     }
 
@@ -454,15 +572,22 @@
   }
 
   function queueAudit(action, steamId) {
+    const now = Date.now();
     state.pendingAudit.push({
-      timestamp: new Date().toISOString(),
-      unix: Math.floor(Date.now() / 1000),
+      schema: 2,
+      id: `web-${now}-${state.pendingAudit.length + 1}`,
+      timestamp: new Date(now).toISOString(),
+      unix: Math.floor(now / 1000),
       steamid: "WEB_ADMIN",
       steamid64: "0",
       nick: state.githubUser?.login || "GitHub Pages admin",
       action,
+      category: String(action).split(".")[0] || "web",
       detail: steamId,
+      result: "success",
       map: "web",
+      server: "GitHub Pages",
+      version: "web-panel",
       source: "github-pages",
     });
   }
