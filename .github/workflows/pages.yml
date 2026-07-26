@@ -2,7 +2,7 @@ name: Deploy whitelist panel to GitHub Pages
 
 on:
   push:
-    branches: ["multitool"]
+    branches: ["main"]
     paths:
       - "docs/**"
       - ".github/workflows/pages.yml"

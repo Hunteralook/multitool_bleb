@@ -8,7 +8,7 @@
       http-equiv="Content-Security-Policy"
       content="default-src 'self'; connect-src https://api.github.com https://gist.githubusercontent.com; img-src 'self' data:; style-src 'self'; script-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'"
    >
-    <title>Unisono Multi-Tool — Whitelist</title>
+    <title>Unisono Multi-Tool — Control</title>
     <link rel="stylesheet" href="styles.css">
     <script src="config.js" defer></script>
     <script src="app.js" defer></script>
@@ -77,6 +77,10 @@
           >
             <span>Whitelist</span>
             <strong id="whitelistCount">0</strong>
+          </button>
+          <button class="nav-button" type="button" data-view="versions">
+            <span>Версии GMod</span>
+            <strong id="versionsCount">0</strong>
           </button>
           <button class="nav-button" type="button" data-view="logs">
             <span>Логи функций</span>
@@ -204,6 +208,94 @@
             </div>
           </div>
 
+          <div class="view" id="view-versions">
+            <div class="view-heading">
+              <div>
+                <p class="section-kicker">КЛИЕНТСКИЕ СБОРКИ</p>
+                <h2>Управление версиями GMod</h2>
+              </div>
+              <div class="heading-actions">
+                <button class="button secondary" id="reloadVersions" type="button">
+                  Обновить данные
+                </button>
+                <button class="button danger" id="forceUpdateAll" type="button">
+                  Обновить всех
+                </button>
+              </div>
+            </div>
+
+            <div class="security-note version-note">
+              <strong>Команда ограничена только обновлением Multi‑Tool.</strong>
+              <span>
+                Клиент проверяет очередь раз в 20 секунд. Уже запущенным старым
+                версиям до v1.6.0 сначала нужен один ручной
+                <code>unisono_loader_reload</code>.
+              </span>
+            </div>
+
+            <div class="table-card">
+              <div class="table-toolbar">
+                <label class="search-field">
+                  <span class="sr-only">Поиск клиента</span>
+                  <input
+                    id="versionsSearch"
+                    type="search"
+                    placeholder="SteamID, ник, версия или сервер..."
+                    autocomplete="off"
+                 >
+                </label>
+                <span class="revision" id="recommendedVersion">Актуальная: —</span>
+              </div>
+              <div class="table-scroll versions-scroll">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>SteamID</th>
+                      <th>Игрок</th>
+                      <th>Версия</th>
+                      <th>Последняя активность</th>
+                      <th>Сервер</th>
+                      <th>Состояние</th>
+                      <th>Действие</th>
+                    </tr>
+                  </thead>
+                  <tbody id="versionsRows"></tbody>
+                </table>
+              </div>
+              <p class="empty-state" id="versionsEmpty" hidden>
+                Клиенты пока не прислали сведения о версии.
+              </p>
+            </div>
+
+            <div class="subsection-heading">
+              <div>
+                <p class="section-kicker">ОЧЕРЕДЬ</p>
+                <h3>Последние команды обновления</h3>
+              </div>
+              <span class="revision" id="commandsCount">0 команд</span>
+            </div>
+
+            <div class="table-card">
+              <div class="table-scroll commands-scroll">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Создана</th>
+                      <th>Цель</th>
+                      <th>Запросил</th>
+                      <th>Ожидаемая версия</th>
+                      <th>Состояние</th>
+                    </tr>
+                  </thead>
+                  <tbody id="versionCommandRows"></tbody>
+                </table>
+              </div>
+              <p class="empty-state" id="commandsEmpty" hidden>
+                Команд обновления ещё нет.
+              </p>
+            </div>
+          </div>
+
           <div class="view" id="view-logs">
             <div class="view-heading">
               <div>
@@ -217,16 +309,26 @@
 
             <div class="table-card">
               <div class="table-toolbar">
-                <label class="search-field">
-                  <span class="sr-only">Фильтр логов</span>
-                  <input
-                    id="logsSearch"
-                    type="search"
-                    placeholder="SteamID, функция, карта или результат..."
-                    autocomplete="off"
-                 >
-                </label>
-                <span class="revision">Хранятся последние 500 событий</span>
+                <div class="logs-filters">
+                  <label class="search-field">
+                    <span class="sr-only">Фильтр логов</span>
+                    <input
+                      id="logsSearch"
+                      type="search"
+                      placeholder="Функция, карта или результат..."
+                      autocomplete="off"
+                   >
+                  </label>
+                  <label class="select-field">
+                    <span class="sr-only">SteamID в логах</span>
+                    <select id="logsSteamIdFilter">
+                      <option value="*">Все SteamID</option>
+                    </select>
+                  </label>
+                </div>
+                <span class="revision" id="logsGroupSummary">
+                  Хранятся последние 500 событий
+                </span>
               </div>
               <div class="table-scroll logs-scroll">
                 <table>
@@ -302,6 +404,10 @@
                 <div>
                   <dt>Файл логов</dt>
                   <dd id="logsFilename">—</dd>
+                </div>
+                <div>
+                  <dt>Команды клиентов</dt>
+                  <dd id="commandsFilename">—</dd>
                 </div>
               </dl>
             </div>
