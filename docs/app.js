@@ -22,6 +22,8 @@
     "bodyfx.clear": "Очистка энергетического шлейфа",
     "bodyfx.bone": "Выбор части тела",
     "bodyfx.style": "Стиль эффекта тела",
+    "bodyfx.preset": "Готовый пресет Body FX",
+    "bodyfx.option": "Дополнительная настройка Body FX",
     "bodyfx.color": "Цвет эффекта тела",
     "bodyfx.light": "Освещение эффекта тела",
     "bodyfx.visibility": "Видимость эффекта тела",
