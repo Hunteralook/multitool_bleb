@@ -2,11 +2,12 @@
   "use strict";
 
   const CONFIG = window.UNISONO_CONFIG;
-  const FEATURES = ["ESP", "NOTES", "STATS", "NOT_WORKING"];
+  const FEATURES = ["ESP", "NOTES", "STATS", "BODY_FX", "NOT_WORKING"];
   const FEATURE_LABELS = {
     ESP: "ESP",
     NOTES: "Заметки",
     STATS: "Статистика",
+    BODY_FX: "Эффекты тела",
     NOT_WORKING: "!Не работает!",
   };
   const ACTION_LABELS = Object.freeze({
@@ -17,6 +18,14 @@
     "font.menu.apply": "Шрифт меню",
     "physgun.give": "Выдача физгана",
     "physgun.rainbow": "Радужный физган",
+    "bodyfx.toggle": "Переключение эффекта тела",
+    "bodyfx.clear": "Очистка энергетического шлейфа",
+    "bodyfx.bone": "Выбор части тела",
+    "bodyfx.style": "Стиль эффекта тела",
+    "bodyfx.color": "Цвет эффекта тела",
+    "bodyfx.light": "Освещение эффекта тела",
+    "bodyfx.visibility": "Видимость эффекта тела",
+    "bodyfx.reset": "Сброс эффектов тела",
     "cvar.change": "Изменение CVar",
     "console.help": "Справка консоли",
     "console.lua": "Lua‑консоль",
@@ -388,6 +397,7 @@
         permissionCell(permissions.ESP, FEATURE_LABELS.ESP),
         permissionCell(permissions.NOTES, FEATURE_LABELS.NOTES),
         permissionCell(permissions.STATS, FEATURE_LABELS.STATS),
+        permissionCell(permissions.BODY_FX, FEATURE_LABELS.BODY_FX),
         permissionCell(permissions.NOT_WORKING, FEATURE_LABELS.NOT_WORKING),
       );
 
