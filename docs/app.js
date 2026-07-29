@@ -615,7 +615,7 @@
     if (Number(command.expires_unix || 0) <= Math.floor(Date.now() / 1000)) {
       return {key: "expired", label: "Истекла"};
     }
-    return {key: "pending", label: "Ожидает клиента"};
+    return {key: "pending", label: "Отправлена • без подтверждения"};
   }
 
   function appendBadgeCell(row, label, className) {
@@ -694,7 +694,7 @@
     elements.recommendedVersion.textContent =
       `Актуальная: ${CONFIG.recommendedClientVersion}`;
     elements.forceUpdateAll.disabled =
-      state.commandBusy || clients.length === 0 || !state.access?.canWrite;
+      state.commandBusy || !state.access?.canWrite;
 
     const commandFragment = document.createDocumentFragment();
     const commands = [...state.commands]
@@ -963,7 +963,7 @@
       return;
     }
 
-    const targetLabel = target === "*" ? "всех известных клиентов" : target;
+    const targetLabel = target === "*" ? "всех онлайн-клиентов" : target;
     if (
       !window.confirm(
         `Принудительно перезагрузить Multi‑Tool у ${targetLabel}? Команда действует 30 минут.`,
@@ -1031,7 +1031,7 @@
       state.revision = revisionOf(updatedGist);
       renderAll();
       setFooter(`Команда обновления для ${targetLabel} поставлена в очередь.`);
-      showToast("Команда отправлена. Клиент получит её в течение 20 секунд.");
+      showToast("Команда отправлена. Онлайн-клиенты проверят её в течение 20 секунд.");
     } catch (error) {
       setFooter(error.message);
       showToast(error.message, true);
