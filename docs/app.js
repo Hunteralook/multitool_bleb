@@ -56,6 +56,7 @@
     "qmenu.reset": "Сброс Q‑меню",
     "chat.command": "Команда в чат",
     "notes.copy_position": "Копирование координат",
+    "notes.teleport": "Телепорт к 3D‑заметке",
     "notes.create_here": "3D‑заметка рядом",
     "notes.create_aim": "3D‑заметка по прицелу",
     "notes.remove": "Удаление 3D‑заметки",
