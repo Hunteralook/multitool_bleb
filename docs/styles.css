@@ -46,11 +46,13 @@ body {
       transparent 28rem
     ),
     linear-gradient(145deg, #070a11 0%, #101625 48%, #090c14 100%);
-  font-family: Tahoma, Calibri, Arial, sans-serif;
+  font-family: "Cascadia Code", "Cascadia Mono", Consolas, monospace;
 }
 
 button,
-input {
+input,
+select,
+textarea {
   font: inherit;
 }
 
@@ -642,7 +644,7 @@ tbody tr.is-selected {
 .log-group-meta {
   margin-left: 9px;
   color: var(--muted);
-  font-family: "Cascadia Mono", "Consolas", monospace;
+  font-family: "Cascadia Code", "Cascadia Mono", Consolas, monospace;
   font-size: 10px;
   font-weight: 500;
 }
@@ -661,7 +663,7 @@ tbody tr.is-selected {
   margin-top: 4px;
   overflow: hidden;
   color: var(--muted);
-  font-family: "Cascadia Mono", "Consolas", monospace;
+  font-family: "Cascadia Code", "Cascadia Mono", Consolas, monospace;
   font-size: 10px;
   text-overflow: ellipsis;
   white-space: nowrap;
